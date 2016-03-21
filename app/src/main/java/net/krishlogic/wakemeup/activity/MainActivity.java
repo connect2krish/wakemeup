@@ -21,6 +21,8 @@ import android.widget.TimePicker;
 import android.widget.ToggleButton;
 
 import net.krishlogic.wakemeup.R;
+import net.krishlogic.wakemeup.Utilities.Constants;
+import net.krishlogic.wakemeup.Utilities.MySharedPreferences;
 import net.krishlogic.wakemeup.receiver.AlarmReceiver;
 import net.krishlogic.wakemeup.service.Ringer;
 
@@ -43,7 +45,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     private int count = 0;
 
-    private static final int COUNT_THRESHOLD=10;
     private boolean isAlarmOn = false;
 
     private SensorManager mSensorManager;
@@ -59,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void init() {
+
         mTextClock = (TextClock) findViewById(R.id.text_clock);
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
@@ -72,12 +74,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mTimePickerLayout = (RelativeLayout) findViewById(R.id.time_picker);
         mButtonOk = (Button) findViewById(R.id.button_ok);
 
+        MySharedPreferences.init_SP_Instance(this);
+
+        mAlarmtime.setText(getAlarmTime());
+
         mButtonOk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
 
                 mAlarmLayout.setVisibility(View.VISIBLE);
                 mTimePickerLayout.setVisibility(View.INVISIBLE);
+
+                saveAlarmTime(mTimePicker.getCurrentHour(), mTimePicker.getCurrentMinute());
+
+                mAlarmtime.setText(getAlarmTime());
             }
         });
 
@@ -104,23 +114,55 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         });
     }
 
+    //returns default if shared prefs is null
+    private String getAlarmTime() {
+        return getHr() + ":" + getMin();
+    }
+
+    private int getHr() {
+        return MySharedPreferences.get_Int(Constants.KEY_ALARM_HR, mTimePicker.getCurrentHour());
+    }
+
+    private int getMin() {
+        return MySharedPreferences.get_Int(Constants.KEY_ALARM_MIN, mTimePicker.getCurrentMinute());
+    }
+
+    private void saveAlarmTime(int hr, int min) {
+        MySharedPreferences.put_Int(Constants.KEY_ALARM_HR, hr);
+        MySharedPreferences.put_Int(Constants.KEY_ALARM_MIN, min);
+    }
+
     public void onToggleClicked(View view) {
         if (mToggleButton.isChecked() && !isAlarmOn) {
-            Log.d("MyActivity", "Alarm On");
-            Calendar calendar = Calendar.getInstance();
-            calendar.set(Calendar.HOUR_OF_DAY, mTimePicker.getCurrentHour());
-            calendar.set(Calendar.MINUTE, mTimePicker.getCurrentMinute());
-            Intent myIntent = new Intent(this, AlarmReceiver.class);
-            pendingIntent = PendingIntent.getBroadcast(this, 0, myIntent, 0);
-            alarmManager.set(AlarmManager.RTC, calendar.getTimeInMillis(), pendingIntent);
-            isAlarmOn = true;
+            setAlarm();
         } else {
-            alarmManager.cancel(pendingIntent);
-            Log.d("MyActivity", "Alarm Off");
-            isAlarmOn = false;
-            Ringer ringer = Ringer.getInstance();
-            ringer.stop();
+            stopAlarm();
         }
+    }
+
+    private void setAlarm() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, getHr());
+        calendar.set(Calendar.MINUTE, getMin());
+        Intent myIntent = new Intent(this, AlarmReceiver.class);
+        pendingIntent = PendingIntent.getBroadcast(this, 0, myIntent, 0);
+        alarmManager.set(AlarmManager.RTC, calendar.getTimeInMillis(), pendingIntent);
+
+        isAlarmOn = true;
+
+        Log.d("TEST", "Alarm On");
+    }
+
+    private void stopAlarm() {
+        alarmManager.cancel(pendingIntent);
+        Log.d("TEST", "Alarm Off");
+
+        isAlarmOn = false;
+
+        Ringer ringer = Ringer.getInstance();
+        ringer.stop();
+
+        resetStepCount();
     }
 
     private void updateStepCount()  {
@@ -132,7 +174,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         updateStepCount();
     }
 
-
+    //breadk this one into smaller methods
     private void getAccelerometer(SensorEvent event) {
         float[] values = event.values;
         // Movement
@@ -161,16 +203,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 lastUpdate = actualTime;
             }
 
-            if (count >= COUNT_THRESHOLD) {
-                Log.d("MyActivity", "Alarm Off");
-
-                isAlarmOn = false;
-                resetStepCount();
-
-                Ringer ringer = Ringer.getInstance();
-                ringer.stop();
-
-                alarmManager.cancel(pendingIntent);
+            if (count >= Constants.COUNT_THRESHOLD) {
+                stopAlarm();
             }
         }
     }

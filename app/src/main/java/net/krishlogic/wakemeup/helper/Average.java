@@ -14,6 +14,11 @@ public class Average {
     private int lowerAverage = 0;
     private int midAverage = 0;
 
+    /**
+     * lower Numbers : accelerometer root values from 0-2
+     * mid Numbers : accelerometer root values from 2.01 - 3.5
+     * higher Numbers : accelerometer root values from 3.51 - 5
+     */
     private List<Integer> lowerNumbers = new ArrayList<>(NUMBER_LIMIT);
     private List<Integer> midNumbers = new ArrayList<>(NUMBER_LIMIT);
     private List<Integer> higherNumbers = new ArrayList<>(NUMBER_LIMIT);
@@ -61,7 +66,6 @@ public class Average {
 
         if (number != 0 || lowerNumbers.size() != NUMBER_LIMIT) {
             lowerNumbers.add(number);
-
         }
     }
 
