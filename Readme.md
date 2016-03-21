@@ -1,0 +1,1 @@
+An app that stops the alarm when you take few steps.
