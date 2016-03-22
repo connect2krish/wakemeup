@@ -33,7 +33,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private TextClock mTextClock;
     private TextView mTotalStepCount;
     private TextView mAlarmtime;
-    private Button mKillButton;
     private long lastUpdate;
     private ToggleButton mToggleButton;
     private PendingIntent pendingIntent;
@@ -66,7 +65,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
         mTotalStepCount = (TextView) findViewById(R.id.label_step_count);
         mAlarmtime = (TextView) findViewById(R.id.label_alarm_time);
-        mKillButton = (Button) findViewById(R.id.button_kill);
         mToggleButton = (ToggleButton) findViewById(R.id.alarm_switch);
         mTimePicker = (TimePicker) findViewById(R.id.alarmTimePicker);
         alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
@@ -78,6 +76,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         mAlarmtime.setText(getAlarmTime());
 
+        //check the saved state of the alarm
+        mToggleButton.setChecked(MySharedPreferences.get_Boolean(Constants.KEY_SWITCH_STATE, false));
+        setOrUnsetAlarm();
+
         mButtonOk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -88,13 +90,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 saveAlarmTime(mTimePicker.getCurrentHour(), mTimePicker.getCurrentMinute());
 
                 mAlarmtime.setText(getAlarmTime());
-            }
-        });
-
-        mKillButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                resetStepCount();
             }
         });
 
@@ -116,7 +111,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     //returns default if shared prefs is null
     private String getAlarmTime() {
-        return getHr() + ":" + getMin();
+        int m = getMin();
+        int h = getHr();
+        String min = getMin() <= 9  ? "0"+m : ""+m;
+        String hr = getHr() <= 9 ? "0"+h :""+h;
+
+        return hr + ":" + min;
     }
 
     private int getHr() {
@@ -133,6 +133,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     public void onToggleClicked(View view) {
+        setOrUnsetAlarm();
+    }
+
+    private void setOrUnsetAlarm() {
         if (mToggleButton.isChecked() && !isAlarmOn) {
             setAlarm();
         } else {
@@ -141,14 +145,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     private void setAlarm() {
+        //reset the state and make sure the pending intent is cancelled.
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, getHr());
         calendar.set(Calendar.MINUTE, getMin());
         Intent myIntent = new Intent(this, AlarmReceiver.class);
-        pendingIntent = PendingIntent.getBroadcast(this, 0, myIntent, 0);
+        pendingIntent = PendingIntent.getBroadcast(this, 0, myIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         alarmManager.set(AlarmManager.RTC, calendar.getTimeInMillis(), pendingIntent);
 
         isAlarmOn = true;
+        MySharedPreferences.put_Boolean(Constants.KEY_SWITCH_STATE, isAlarmOn);
 
         Log.d("TEST", "Alarm On");
     }
@@ -163,6 +169,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         ringer.stop();
 
         resetStepCount();
+
+        MySharedPreferences.put_Boolean(Constants.KEY_SWITCH_STATE, isAlarmOn);
+
+        //turn alarm switch off
     }
 
     private void updateStepCount()  {

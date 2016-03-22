@@ -20,13 +20,6 @@ public class AlarmReceiver extends WakefulBroadcastReceiver {
         //this will sound the alarm tone
         //this will sound the alarm once, if you wish to
         //raise alarm in loop continuously then use MediaPlayer and setLooping(true)
-//        Uri alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
-//        if (alarmUri == null) {
-//            alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-//        }
-//        Ringtone ringtone = RingtoneManager.getRingtone(context, alarmUri);
-//        ringtone.play();
-
         Ringer ringer = Ringer.getInstance();
         ringer.setup(context);
         ringer.play();

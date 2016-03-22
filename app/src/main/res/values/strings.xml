@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">"Walk me up!"</string>
+    <string name="app_name">"Wake me up!"</string>
     <string name="title_activity_settings">Settings</string>
 
     <!-- Strings for activity_main -->
