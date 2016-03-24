@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.support.v4.content.WakefulBroadcastReceiver;
 
+import net.krishlogic.wakemeup.Utilities.Constants;
+import net.krishlogic.wakemeup.Utilities.MySharedPreferences;
 import net.krishlogic.wakemeup.service.Ringer;
 
 /**
@@ -23,6 +25,9 @@ public class AlarmReceiver extends WakefulBroadcastReceiver {
         Ringer ringer = Ringer.getInstance();
         ringer.setup(context);
         ringer.play();
+
+        MySharedPreferences.init_SP_Instance(context);
+        MySharedPreferences.put_Boolean(Constants.KEY_IS_ALARM_ON, true);
 
         //this will send a notification message
         ComponentName comp = new ComponentName(context.getPackageName(),

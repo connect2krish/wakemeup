@@ -78,7 +78,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         //check the saved state of the alarm
         mToggleButton.setChecked(MySharedPreferences.get_Boolean(Constants.KEY_SWITCH_STATE, false));
-        setOrUnsetAlarm();
+        isAlarmOn = MySharedPreferences.get_Boolean(Constants.KEY_IS_ALARM_ON, false);
+
+        Log.d("TEST", "IS ALARM ON: " + isAlarmOn);
+
+        if (!isAlarmOn) {
+            setOrUnsetAlarm();
+        }
 
         mButtonOk.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -151,7 +157,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         calendar.set(Calendar.MINUTE, getMin());
         Intent myIntent = new Intent(this, AlarmReceiver.class);
         pendingIntent = PendingIntent.getBroadcast(this, 0, myIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        alarmManager.set(AlarmManager.RTC, calendar.getTimeInMillis(), pendingIntent);
+        alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
 
         isAlarmOn = true;
         MySharedPreferences.put_Boolean(Constants.KEY_SWITCH_STATE, isAlarmOn);
@@ -171,8 +177,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         resetStepCount();
 
         MySharedPreferences.put_Boolean(Constants.KEY_SWITCH_STATE, isAlarmOn);
-
-        //turn alarm switch off
+        MySharedPreferences.put_Boolean(Constants.KEY_IS_ALARM_ON, isAlarmOn);
     }
 
     private void updateStepCount()  {
@@ -198,19 +203,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         long actualTime = event.timestamp;
 
         if (isAlarmOn && mToggleButton.isChecked()) {
-            if (accelationSquareRoot >= 1.7 &&
+            if (accelationSquareRoot >= 2.3 &&
                     event.accuracy == SensorManager.SENSOR_STATUS_ACCURACY_HIGH) {
 
                 Log.d("TEST", "" + accelationSquareRoot);
                 Log.d("TEST", "STEP COUNT = " + count++);
-
-                updateStepCount();
 
                 if (actualTime - lastUpdate < 200) {
                     return;
                 }
 
                 lastUpdate = actualTime;
+
+                updateStepCount();
             }
 
             if (count >= Constants.COUNT_THRESHOLD) {
